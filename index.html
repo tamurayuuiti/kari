@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Clock</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap">
+    <style>
+        body {
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+            background-color: #111; /* ダークな背景 */
+            color: #8aff00; /* 黄緑色の文字 */
+            font-family: 'Orbitron', sans-serif;
+            overflow: hidden;
+        }
+
+        .clock-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .clock-box {
+            text-align: left;
+            margin: 20px 0;
+            margin-left: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 80px; /* もう少し小さなフォントサイズに変更 */
+            letter-spacing: 10px;
+            white-space: nowrap;
+        }
+
+        .label {
+            font-size: 25px; /* ラベルのフォントサイズを調整 */
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="clock-container">
+    <div class="clock-box">
+        <h1 id="current-jst"></h1>
+        <div class="label">JST</div>
+    </div>
+    <div class="clock-box">
+        <h1 id="current-ust"></h1>
+        <div class="label">UST</div>
+    </div>
+</div>
+
+<script>
+    function getCurrentTime() {
+        var currentTime = new Date();
+
+        // JST
+        var jstHours = currentTime.getHours();
+        var jstMinutes = currentTime.getMinutes();
+        var jstSeconds = currentTime.getSeconds();
+        var jstMilliseconds = currentTime.getMilliseconds();
+
+        // UST
+        var ustHours = currentTime.getUTCHours();
+        var ustMinutes = currentTime.getUTCMinutes();
+        var ustSeconds = currentTime.getUTCSeconds();
+        var ustMilliseconds = currentTime.getUTCMilliseconds();
+
+        // 2桁の0埋め
+        jstHours = (jstHours < 10) ? "0" + jstHours : jstHours;
+        jstMinutes = (jstMinutes < 10) ? "0" + jstMinutes : jstMinutes;
+        jstSeconds = (jstSeconds < 10) ? "0" + jstSeconds : jstSeconds;
+        jstMilliseconds = (jstMilliseconds < 100) ? (jstMilliseconds < 10 ? "00" + jstMilliseconds : "0" + jstMilliseconds) : jstMilliseconds;
+
+        ustHours = (ustHours < 10) ? "0" + ustHours : ustHours;
+        ustMinutes = (ustMinutes < 10) ? "0" + ustMinutes : ustMinutes;
+        ustSeconds = (ustSeconds < 10) ? "0" + ustSeconds : ustSeconds;
+        ustMilliseconds = (ustMilliseconds < 100) ? (ustMilliseconds < 10 ? "00" + ustMilliseconds : "0" + ustMilliseconds) : ustMilliseconds;
+
+        var formattedJST = jstHours + ":" + jstMinutes + ":" + jstSeconds + "." + jstMilliseconds;
+        var formattedUST = ustHours + ":" + ustMinutes + ":" + ustSeconds + "." + ustMilliseconds;
+
+        return { jst: formattedJST, ust: formattedUST };
+    }
+
+    function updateCurrentTime() {
+        var jstElement = document.getElementById("current-jst");
+        var ustElement = document.getElementById("current-ust");
+        var times = getCurrentTime();
+
+        // 前回の文字列の長さを取得
+        var jstWidth = jstElement.offsetWidth;
+        var ustWidth = ustElement.offsetWidth;
+
+        // JSTを表示
+        jstElement.textContent = times.jst;
+        // 幅を設定
+        jstElement.style.width = jstWidth + 'px';
+
+        // USTを表示
+        ustElement.textContent = times.ust;
+        // 幅を設定
+        ustElement.style.width = ustWidth + 'px';
+    }
+
+    // ページ読み込み時に初回更新
+    updateCurrentTime();
+
+    // 100分の1秒ごとに更新
+    setInterval(updateCurrentTime, 100);
+</script>
+
+</body>
+</html>
