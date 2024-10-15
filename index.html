@@ -44,6 +44,24 @@
         }
         #previewTextBox { width: 80%; margin-left: auto; margin-right: auto; height: 400px; padding: 10px; border: 1px solid #ccc; overflow-y: scroll; background-color: #f9f9f9; color: #333; white-space: pre-wrap; text-align: left; }
         audio { width: 100%; }
+
+        /* モーダルのスタイル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal img {
+            max-width: 90%;
+            max-height: 90%;
+        }
     </style>
 </head>
 <body>
@@ -79,7 +97,7 @@
         </div>
 
         <!-- モーダル表示 -->
-        <div class="modal" id="imageModal" style="display:none;" onclick="closeModal()">
+        <div class="modal" id="imageModal" onclick="closeModal()">
             <img id="modalImage" src="" alt="拡大画像" />
         </div>
     </div>
@@ -167,7 +185,7 @@
 
             // 拡張子長の抽出（8ビット）
             let extLengthBinary = '';
-            for (let i = 0; i < 8; i++) {
+            for (let i = 0; 8 > i; i++) {
                 const bit = imgData.data[pixelIndex] & 1;
                 extLengthBinary += bit;
                 pixelIndex += 1;
@@ -263,8 +281,8 @@
                 previewContent.appendChild(audio);
                 previewArea.style.display = 'block';
 
-            } else if (fileExtension === 'txt' || fileExtension === 'json' || fileExtension === 'csv') {
-                // テキストデータのプレビュー（中央揃え）
+            } else if (fileExtension === 'txt' || fileExtension === 'json' || 'csv') {
+                // テキストデータのプレビュー
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const textBox = document.createElement('div');
@@ -274,15 +292,6 @@
                     previewArea.style.display = 'block';
                 };
                 reader.readAsText(extractedBlob);
-
-            } else {
-                // その他のファイルはプレビューせず、ダウンロードリンクを表示
-                const downloadLink = document.createElement('a');
-                downloadLink.href = URL.createObjectURL(extractedBlob);
-                downloadLink.download = extractedFileName;
-                downloadLink.textContent = '抽出されたファイルをダウンロード';
-                previewContent.appendChild(downloadLink);
-                previewArea.style.display = 'block';
             }
         }
 
