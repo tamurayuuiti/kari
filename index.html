@@ -57,6 +57,7 @@
             </div>
             <p id="extractedFileInfo" class="info"></p>
             <button id="extractButton" onclick="extractData()" disabled>データを抽出する</button>
+            <button id="downloadButton" style="display:none;" onclick="downloadExtractedData()">抽出されたファイルをダウンロード</button>
             <div id="loadingIndicator">
                 <div class="loader"></div>
             </div>
@@ -75,7 +76,6 @@
                 <div id="previewContent"></div>
             </div>
 
-            <button id="downloadButton" style="display:none;" onclick="downloadExtractedData()">抽出されたファイルをダウンロード</button>
         </div>
 
         <!-- モーダル表示 -->
@@ -134,7 +134,11 @@
             const progressBarText = document.getElementById('progressBarText');
             progressBar.style.width = percent + '%';
             progressBarText.textContent = percent + '%';
-            document.getElementById('progressMessage').innerText = 'データ抽出中';
+            if (percent === 100) {
+                document.getElementById('progressMessage').innerText = 'データ抽出完了';
+            } else {
+                document.getElementById('progressMessage').innerText = 'データ抽出中';
+            }
         }
 
         function extractData() {
