@@ -45,24 +45,9 @@
         #previewTextBox { width: 80%; margin-left: auto; margin-right: auto; height: 400px; padding: 10px; border: 1px solid #ccc; overflow-y: scroll; background-color: #f9f9f9; color: #333; white-space: pre-wrap; text-align: left; }
         audio { width: 100%; }
 
-        /* モーダルのスタイル（白い光の枠線を追加） */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-        .modal img {
-            max-width: 90%;
-            max-height: 90%;
-            box-shadow: 0 0 10px white;  /* 画像の周囲に白いシャドウを追加 */
-        }
+        /* モーダルのスタイル（コンパクトに改行） */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); align-items: center; justify-content: center; z-index: 1000; }
+        .modal img { max-width: 90%; max-height: 90%; box-shadow: 0 0 10px white; }
     </style>
 </head>
 <body>
@@ -74,7 +59,9 @@
                 <p>または</p>
                 <input type="file" id="extractImageInput" accept="image/png, image/jpeg, image/heif">
             </div>
-            <p id="extractedFileInfo" class="info"></p>
+            <!-- データの詳細情報の表示位置をプレビュー付近に移動 -->
+            <div id="extractedFileInfo" class="info"></div>
+
             <button id="extractButton" onclick="extractData()" disabled>データを抽出する</button>
             <button id="downloadButton" style="display:none;" onclick="downloadExtractedData()">抽出されたファイルをダウンロード</button>
             <div id="loadingIndicator">
@@ -97,7 +84,7 @@
 
         </div>
 
-        <!-- モーダル表示 -->
+        <!-- モーダル表示（コンパクトに） -->
         <div class="modal" id="imageModal" onclick="closeModal()">
             <img id="modalImage" src="" alt="拡大画像" />
         </div>
@@ -251,7 +238,7 @@
             document.getElementById('downloadButton').style.display = 'inline-block';
             document.getElementById('loadingIndicator').style.display = 'none';  // 回転インジケータを非表示
 
-            // 抽出データの形式や容量を表示
+            // 抽出データの形式や容量を表示（プレビュー付近に）
             const fileSize = (extractedBlob.size / 1024).toFixed(2) + ' KB';
             document.getElementById('extractedFileInfo').innerText = `ファイル形式: ${fileExtension}, 容量: ${fileSize}`;
         }
@@ -282,7 +269,7 @@
                 previewContent.appendChild(audio);
                 previewArea.style.display = 'block';
 
-            } else if (fileExtension === 'txt' || fileExtension === 'json' || 'csv') {
+            } else if (fileExtension === 'txt' || fileExtension === 'json' || fileExtension === 'csv') {
                 // テキストデータのプレビュー
                 const reader = new FileReader();
                 reader.onload = function(event) {
@@ -293,6 +280,15 @@
                     previewArea.style.display = 'block';
                 };
                 reader.readAsText(extractedBlob);
+
+            } else {
+                // PDFなどその他の形式の場合、プレビューができないことを表示
+                const message = document.createElement('p');
+                message.style.fontSize = '18px';
+                message.style.fontWeight = 'bold';
+                message.textContent = `この形式のプレビューはできません。ファイル形式: ${fileExtension}`;
+                previewContent.appendChild(message);
+                previewArea.style.display = 'block';
             }
         }
 
@@ -305,16 +301,9 @@
             URL.revokeObjectURL(link.href);
         }
 
-        // モーダル表示の関数
-        function openModal(imageUrl) {
-            const modalImage = document.getElementById('modalImage');
-            modalImage.src = imageUrl;
-            document.getElementById('imageModal').style.display = 'flex';
-        }
-
-        function closeModal() {
-            document.getElementById('imageModal').style.display = 'none';
-        }
+        // モーダル表示の関数（コードのコンパクト化）
+        function openModal(imageUrl) { const modalImage = document.getElementById('modalImage'); modalImage.src = imageUrl; document.getElementById('imageModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('imageModal').style.display = 'none'; }
     </script>
 </body>
 </html>
