@@ -30,6 +30,7 @@
         #progressBar { height: 100%; width: 0%; background-color: #4CAF50; border-radius: 5px; transition: width 0.3s ease; }
         #progressBarText { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 14px; line-height: 30px; color: black; font-weight: bold; }
         .bold-info-value { font-weight: bold; color: #333; }
+        #progressMessage { margin-top: 10px; font-size: 14px; color: #666; }
 
         /* ダークモード対応 */
         @media (prefers-color-scheme: dark) {
@@ -41,6 +42,7 @@
             #dropArea { border-color: #444; }
             #progressBarContainer { background-color: #333; border-color: #444; }
         }
+        #previewTextBox { width: 100%; height: 200px; padding: 10px; border: 1px solid #ccc; overflow-y: scroll; background-color: #f9f9f9; color: #333; white-space: pre-wrap; }
     </style>
 </head>
 <body>
@@ -62,6 +64,7 @@
                     <span id="progressBarText">0%</span>
                 </div>
             </div>
+            <p id="progressMessage"></p>
             <div id="extractedImageDetails" class="details"></div>
             <canvas id="canvas"></canvas>
 
@@ -70,10 +73,12 @@
                 <p>抽出されたデータ:</p>
                 <div id="previewContent"></div>
             </div>
+
+            <button id="downloadButton" style="display:none;" onclick="downloadExtractedData()">抽出されたファイルをダウンロード</button>
         </div>
 
         <!-- モーダル表示 -->
-        <div class="modal" id="imageModal" onclick="closeModal()">
+        <div class="modal" id="imageModal" style="display:none;" onclick="closeModal()">
             <img id="modalImage" src="" alt="拡大画像" />
         </div>
     </div>
@@ -81,6 +86,8 @@
     <script>
         let imgData = null;
         let isImageUploaded = false;
+        let extractedBlob = null;
+        let extractedFileName = '';
 
         function resetUI() {
             document.getElementById('extractedFileInfo').innerText = '';
@@ -88,8 +95,10 @@
             document.getElementById('progressBarContainer').style.display = 'none';
             document.getElementById('progressBar').style.width = '0%';
             document.getElementById('progressBarText').innerText = '0%';
+            document.getElementById('progressMessage').innerText = '';
             document.getElementById('previewArea').style.display = 'none';
             document.getElementById('previewContent').innerHTML = '';
+            document.getElementById('downloadButton').style.display = 'none';
         }
 
         function handleImageUpload(file) {
@@ -122,6 +131,7 @@
             const progressBarText = document.getElementById('progressBarText');
             progressBar.style.width = percent + '%';
             progressBarText.textContent = percent + '%';
+            document.getElementById('progressMessage').innerText = 'データ抽出中';
         }
 
         function extractData() {
@@ -193,19 +203,23 @@
             }
 
             // データのプレビュー
+            extractedBlob = new Blob([new Uint8Array(binaryData)]);
+            extractedFileName = `extracted.${fileExtension}`;
             previewExtractedData(binaryData, fileExtension);
             updateProgressBar(100);
+
+            // ダウンロードボタンを表示
+            document.getElementById('downloadButton').style.display = 'inline-block';
         }
 
         // 抽出データのプレビュー機能
         function previewExtractedData(binaryData, fileExtension) {
             const previewArea = document.getElementById('previewArea');
             const previewContent = document.getElementById('previewContent');
-            const blob = new Blob([new Uint8Array(binaryData)]);
 
             if (fileExtension === 'png' || fileExtension === 'jpg' || fileExtension === 'jpeg') {
                 // 画像データのプレビュー
-                const imageUrl = URL.createObjectURL(blob);
+                const imageUrl = URL.createObjectURL(extractedBlob);
                 const img = document.createElement('img');
                 img.src = imageUrl;
                 img.style.cursor = 'pointer';
@@ -217,7 +231,7 @@
 
             } else if (fileExtension === 'wav') {
                 // 音声データのプレビュー
-                const audioUrl = URL.createObjectURL(blob);
+                const audioUrl = URL.createObjectURL(extractedBlob);
                 const audio = document.createElement('audio');
                 audio.controls = true;
                 audio.src = audioUrl;
@@ -228,22 +242,32 @@
                 // テキストデータのプレビュー
                 const reader = new FileReader();
                 reader.onload = function(event) {
-                    const text = document.createElement('pre');
-                    text.textContent = event.target.result;
-                    previewContent.appendChild(text);
+                    const textBox = document.createElement('div');
+                    textBox.id = 'previewTextBox';
+                    textBox.textContent = event.target.result;
+                    previewContent.appendChild(textBox);
                     previewArea.style.display = 'block';
                 };
-                reader.readAsText(blob);
+                reader.readAsText(extractedBlob);
 
             } else {
                 // その他のファイルはプレビューせず、ダウンロードリンクを表示
                 const downloadLink = document.createElement('a');
-                downloadLink.href = URL.createObjectURL(blob);
-                downloadLink.download = `extracted.${fileExtension}`;
+                downloadLink.href = URL.createObjectURL(extractedBlob);
+                downloadLink.download = extractedFileName;
                 downloadLink.textContent = '抽出されたファイルをダウンロード';
                 previewContent.appendChild(downloadLink);
                 previewArea.style.display = 'block';
             }
+        }
+
+        // 抽出データのダウンロード
+        function downloadExtractedData() {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(extractedBlob);
+            link.download = extractedFileName;
+            link.click();
+            URL.revokeObjectURL(link.href);
         }
 
         // モーダル表示の関数
