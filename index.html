@@ -42,7 +42,7 @@
             #dropArea { border-color: #444; }
             #progressBarContainer { background-color: #333; border-color: #444; }
         }
-        #previewTextBox { width: 50%; margin-left: auto; margin-right: auto; height: 200px; padding: 10px; border: 1px solid #ccc; overflow-y: scroll; background-color: #f9f9f9; color: #333; white-space: pre-wrap; text-align: left; }
+        #previewTextBox { width: 80%; margin-left: auto; margin-right: auto; height: 400px; padding: 10px; border: 1px solid #ccc; overflow-y: scroll; background-color: #f9f9f9; color: #333; white-space: pre-wrap; text-align: left; }
         audio { width: 100%; }
     </style>
 </head>
@@ -227,6 +227,10 @@
             // ダウンロードボタンを表示
             document.getElementById('downloadButton').style.display = 'inline-block';
             document.getElementById('loadingIndicator').style.display = 'none';  // 回転インジケータを非表示
+
+            // 抽出データの形式や容量を表示
+            const fileSize = (extractedBlob.size / 1024).toFixed(2) + ' KB';
+            document.getElementById('extractedFileInfo').innerText = `ファイル形式: ${fileExtension}, 容量: ${fileSize}`;
         }
 
         // 抽出データのプレビュー機能
