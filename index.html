@@ -42,7 +42,8 @@
             #dropArea { border-color: #444; }
             #progressBarContainer { background-color: #333; border-color: #444; }
         }
-        #previewTextBox { width: 100%; height: 200px; padding: 10px; border: 1px solid #ccc; overflow-y: scroll; background-color: #f9f9f9; color: #333; white-space: pre-wrap; text-align: left; }
+        #previewTextBox { width: 50%; margin-left: auto; margin-right: auto; height: 200px; padding: 10px; border: 1px solid #ccc; overflow-y: scroll; background-color: #f9f9f9; color: #333; white-space: pre-wrap; text-align: left; }
+        audio { width: 100%; }
     </style>
 </head>
 <body>
@@ -255,7 +256,7 @@
                 previewArea.style.display = 'block';
 
             } else if (fileExtension === 'txt' || fileExtension === 'json' || fileExtension === 'csv') {
-                // テキストデータのプレビュー
+                // テキストデータのプレビュー（中央揃え）
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const textBox = document.createElement('div');
