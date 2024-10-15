@@ -1,70 +1,261 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JSTとUSTの時間表示</title>
-  <style>
-    body {
-      background-color: black;
-      color: #aaff55; /* 黄緑色 */
-      font-family: 'Courier New', monospace; /* モノスペースフォント */
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      justify-content: flex-start;
-      height: 100vh;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ステガノグラフィー - 埋め込まれたデータを抽出</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; color: #333; transition: background-color 0.3s, color 0.3s; }
+        .container { max-width: 85%; margin: 0 auto; background-color: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); border-radius: 8px; }
+        .section { margin-bottom: 40px; }
+        .section h3 { color: #444; margin-bottom: 10px; }
+        .section p { margin: 5px 0; color: #666; }
+        input[type="file"], button { margin-top: 10px; padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; margin-right: 10px; padding: 10px 20px; text-align: center; }
+        button:hover { background-color: #45a049; }
+        button:disabled { background-color: #d3d3f3; cursor: not-allowed; }
+        .center { display: block; margin-left: auto; margin-right: auto; }
+        .image-preview { margin-top: 20px; text-align: center; cursor: pointer; }
+        .image-preview img { max-width: 100%; max-height: 400px; height: auto; border: 1px solid #ccc; margin-top: 10px; padding: 10px; background-color: #f1f1f1; display: block; margin-left: auto; margin-right: auto; box-sizing: border-box; }
+        .info { font-size: 14px; color: #666; margin-top: 5px; }
+        .details { font-size: 14px; margin-top: 10px; color: #333; }
+        .warning { color: red; }
+        #dropArea, #fileDropArea { border: 2px dashed #ccc; border-radius: 5px; padding: 20px; text-align: center; cursor: pointer; }
+        #dropArea.dragging, #fileDropArea.dragging { border-color: #4CAF50; }
+        #canvas { display: none; }
+        #loadingIndicator, #uploadIndicator { display: none; margin-top: 10px; }
+        .loader { border: 6px solid #f3f3f3; border-radius: 50%; border-top: 6px solid #3498db; width: 40px; height: 40px; animation: spin 2s linear infinite; display: inline-block; margin-right: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #progressBarContainer { width: 100%; background-color: #f3f3f3; border: 1px solid #ccc; border-radius: 5px; margin-top: 10px; height: 30px; position: relative; display: flex; justify-content: space-between; align-items: center; }
+        #progressBar { height: 100%; width: 0%; background-color: #4CAF50; border-radius: 5px; transition: width 0.3s ease; }
+        #progressBarText { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 14px; line-height: 30px; color: black; font-weight: bold; }
+        .bold-info-value { font-weight: bold; color: #333; }
 
-    p {
-      font-size: 60px; /* 少し小さなフォントサイズに変更 */
-      margin: 10px 0;
-    }
-  </style>
+        /* ダークモード対応 */
+        @media (prefers-color-scheme: dark) {
+            body { background-color: #121212; color: #e0e0e0; }
+            .container { background-color: #1e1e1e; }
+            .section h3 { color: #e0e0e0; }
+            .section p, .info, .details { color: #bbbbbb; }
+            .image-preview img { border: 1px solid #444; background-color: #333; }
+            #dropArea { border-color: #444; }
+            #progressBarContainer { background-color: #333; border-color: #444; }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <div class="section">
+            <h3>1. 画像から埋め込まれたデータを抽出</h3>
+            <div id="dropArea">
+                <p>ここに画像をドラッグ＆ドロップしてください</p>
+                <p>または</p>
+                <input type="file" id="extractImageInput" accept="image/png, image/jpeg, image/heif">
+            </div>
+            <p id="extractedFileInfo" class="info"></p>
+            <button id="extractButton" onclick="extractData()" disabled>データを抽出する</button>
+            <div id="loadingIndicator">
+                <div class="loader"></div>
+            </div>
+            <div id="progressBarContainer" style="display:none;">
+                <div id="progressBar">
+                    <span id="progressBarText">0%</span>
+                </div>
+            </div>
+            <div id="extractedImageDetails" class="details"></div>
+            <canvas id="canvas"></canvas>
 
-<p id="jstDateTime"></p>
-<p id="ustDateTime"></p>
+            <!-- プレビュー用エリア -->
+            <div id="previewArea" class="image-preview" style="display: none;">
+                <p>抽出されたデータ:</p>
+                <div id="previewContent"></div>
+            </div>
+        </div>
 
-<script>
-function updateDateTimes() {
-  var now = new Date();
+        <!-- モーダル表示 -->
+        <div class="modal" id="imageModal" onclick="closeModal()">
+            <img id="modalImage" src="" alt="拡大画像" />
+        </div>
+    </div>
 
-  // JST
-  var jstYear = now.getFullYear();
-  var jstMonth = (now.getMonth() + 1).toString().padStart(2, '0');
-  var jstDay = now.getDate().toString().padStart(2, '0');
-  var jstHours = now.getHours().toString().padStart(2, '0');
-  var jstMinutes = now.getMinutes().toString().padStart(2, '0');
-  var jstSeconds = now.getSeconds().toString().padStart(2, '0');
-  var jstMilliseconds = now.getMilliseconds().toString().padStart(3, '0');
+    <script>
+        let imgData = null;
+        let isImageUploaded = false;
 
-  // UTC
-  var utcYear = now.getUTCFullYear();
-  var utcMonth = (now.getUTCMonth() + 1).toString().padStart(2, '0');
-  var utcDay = now.getUTCDate().toString().padStart(2, '0');
-  var utcHours = now.getUTCHours().toString().padStart(2, '0');
-  var utcMinutes = now.getUTCMinutes().toString().padStart(2, '0');
-  var utcSeconds = now.getUTCSeconds().toString().padStart(2, '0');
-  var utcMilliseconds = now.getUTCMilliseconds().toString().padStart(3, '0');
+        function resetUI() {
+            document.getElementById('extractedFileInfo').innerText = '';
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('progressBarContainer').style.display = 'none';
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('progressBarText').innerText = '0%';
+            document.getElementById('previewArea').style.display = 'none';
+            document.getElementById('previewContent').innerHTML = '';
+        }
 
-  var jstDateTime = `${jstYear}-${jstMonth}-${jstDay} ${jstHours}:${jstMinutes}:${jstSeconds}.${jstMilliseconds}`;
-  var ustDateTime = `${utcYear}-${utcMonth}-${utcDay} ${utcHours}:${utcMinutes}:${utcSeconds}.${utcMilliseconds}`;
+        function handleImageUpload(file) {
+            resetUI();
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.getElementById('canvas');
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    isImageUploaded = true;
+                    document.getElementById('extractButton').disabled = false;
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
 
-  document.getElementById('jstDateTime').textContent = `JST: ${jstDateTime}`;
-  document.getElementById('ustDateTime').textContent = `UST: ${ustDateTime}`;
-}
+        document.getElementById('extractImageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            handleImageUpload(file);
+        });
 
-// 1秒ごとに更新
-setInterval(updateDateTimes, 1);
+        function updateProgressBar(percent) {
+            const progressBar = document.getElementById('progressBar');
+            const progressBarText = document.getElementById('progressBarText');
+            progressBar.style.width = percent + '%';
+            progressBarText.textContent = percent + '%';
+        }
 
-// 初回表示
-updateDateTimes();
-</script>
+        function extractData() {
+            if (!isImageUploaded) {
+                alert("画像がアップロードされていません。");
+                return;
+            }
 
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('progressBarContainer').style.display = 'block';
+            updateProgressBar(0);
+
+            let pixelIndex = 0;
+
+            // データ長の抽出（32ビット）
+            let binaryLength = '';
+            for (let i = 0; i < 32; i++) {
+                const bit = imgData.data[pixelIndex] & 1;
+                binaryLength += bit;
+                pixelIndex += 1;
+                if ((pixelIndex + 1) % 4 === 0) {
+                    pixelIndex += 1;  // アルファチャンネルをスキップ
+                }
+            }
+            const dataLength = parseInt(binaryLength, 2);
+
+            // 拡張子長の抽出（8ビット）
+            let extLengthBinary = '';
+            for (let i = 0; i < 8; i++) {
+                const bit = imgData.data[pixelIndex] & 1;
+                extLengthBinary += bit;
+                pixelIndex += 1;
+                if ((pixelIndex + 1) % 4 === 0) {
+                    pixelIndex += 1;  // アルファチャンネルをスキップ
+                }
+            }
+            const extLength = parseInt(extLengthBinary, 2);
+
+            // ファイル拡張子の抽出
+            let fileExtension = '';
+            for (let i = 0; i < extLength; i++) {
+                let charBinary = '';
+                for (let j = 0; j < 8; j++) {
+                    const bit = imgData.data[pixelIndex] & 1;
+                    charBinary += bit;
+                    pixelIndex += 1;
+                    if ((pixelIndex + 1) % 4 === 0) {
+                        pixelIndex += 1;  // アルファチャンネルをスキップ
+                    }
+                }
+                fileExtension += String.fromCharCode(parseInt(charBinary, 2));
+            }
+
+            // データ本体の抽出
+            const binaryData = [];
+            for (let i = 0; i < dataLength; i++) {
+                let byte = '';
+                for (let j = 0; j < 8; j++) {
+                    const bit = imgData.data[pixelIndex] & 1;
+                    byte += bit;
+                    pixelIndex += 1;
+                    if ((pixelIndex + 1) % 4 === 0) {
+                        pixelIndex += 1;  // アルファチャンネルをスキップ
+                    }
+                }
+                binaryData.push(parseInt(byte, 2));
+                // 進捗バーの更新
+                updateProgressBar(Math.round((i / dataLength) * 100));
+            }
+
+            // データのプレビュー
+            previewExtractedData(binaryData, fileExtension);
+            updateProgressBar(100);
+        }
+
+        // 抽出データのプレビュー機能
+        function previewExtractedData(binaryData, fileExtension) {
+            const previewArea = document.getElementById('previewArea');
+            const previewContent = document.getElementById('previewContent');
+            const blob = new Blob([new Uint8Array(binaryData)]);
+
+            if (fileExtension === 'png' || fileExtension === 'jpg' || fileExtension === 'jpeg') {
+                // 画像データのプレビュー
+                const imageUrl = URL.createObjectURL(blob);
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.style.cursor = 'pointer';
+                img.onclick = function() {
+                    openModal(imageUrl);
+                };
+                previewContent.appendChild(img);
+                previewArea.style.display = 'block';
+
+            } else if (fileExtension === 'wav') {
+                // 音声データのプレビュー
+                const audioUrl = URL.createObjectURL(blob);
+                const audio = document.createElement('audio');
+                audio.controls = true;
+                audio.src = audioUrl;
+                previewContent.appendChild(audio);
+                previewArea.style.display = 'block';
+
+            } else if (fileExtension === 'txt' || fileExtension === 'json' || fileExtension === 'csv') {
+                // テキストデータのプレビュー
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const text = document.createElement('pre');
+                    text.textContent = event.target.result;
+                    previewContent.appendChild(text);
+                    previewArea.style.display = 'block';
+                };
+                reader.readAsText(blob);
+
+            } else {
+                // その他のファイルはプレビューせず、ダウンロードリンクを表示
+                const downloadLink = document.createElement('a');
+                downloadLink.href = URL.createObjectURL(blob);
+                downloadLink.download = `extracted.${fileExtension}`;
+                downloadLink.textContent = '抽出されたファイルをダウンロード';
+                previewContent.appendChild(downloadLink);
+                previewArea.style.display = 'block';
+            }
+        }
+
+        // モーダル表示の関数
+        function openModal(imageUrl) {
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = imageUrl;
+            document.getElementById('imageModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
