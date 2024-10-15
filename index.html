@@ -59,8 +59,6 @@
                 <p>または</p>
                 <input type="file" id="extractImageInput" accept="image/png, image/jpeg, image/heif">
             </div>
-            <!-- データの詳細情報の表示位置をプレビュー付近に移動 -->
-            <div id="extractedFileInfo" class="info"></div>
 
             <button id="extractButton" onclick="extractData()" disabled>データを抽出する</button>
             <button id="downloadButton" style="display:none;" onclick="downloadExtractedData()">抽出されたファイルをダウンロード</button>
@@ -73,6 +71,10 @@
                 </div>
             </div>
             <p id="progressMessage"></p>
+
+            <!-- データの詳細情報をバーよりも下に配置 -->
+            <div id="extractedFileInfo" class="info" style="margin-top: 20px;"></div>
+
             <div id="extractedImageDetails" class="details"></div>
             <canvas id="canvas"></canvas>
 
@@ -238,9 +240,20 @@
             document.getElementById('downloadButton').style.display = 'inline-block';
             document.getElementById('loadingIndicator').style.display = 'none';  // 回転インジケータを非表示
 
-            // 抽出データの形式や容量を表示（プレビュー付近に）
-            const fileSize = (extractedBlob.size / 1024).toFixed(2) + ' KB';
+            // 容量をKBまたはMBに変換して表示
+            const fileSize = formatFileSize(extractedBlob.size);
             document.getElementById('extractedFileInfo').innerText = `ファイル形式: ${fileExtension}, 容量: ${fileSize}`;
+        }
+
+        // 容量をKBまたはMBに変換する関数
+        function formatFileSize(size) {
+            if (size >= 1048576) {
+                return (size / 1048576).toFixed(2) + ' MB';
+            } else if (size >= 1024) {
+                return (size / 1024).toFixed(2) + ' KB';
+            } else {
+                return size + ' バイト';
+            }
         }
 
         // 抽出データのプレビュー機能
