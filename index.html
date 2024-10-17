@@ -61,7 +61,7 @@
             </div>
 
             <button id="extractButton" onclick="extractData()" disabled>データを抽出する</button>
-            <button id="downloadButton" style="display:none;" onclick="downloadExtractedData()">抽出されたファイルをダウンロード</button>
+            <button id="downloadButton" style="display:none;" onclick="downloadExtractedData()">抽出されたデータをダウンロード</button>
             <div id="loadingIndicator">
                 <div class="loader"></div>
             </div>
@@ -97,6 +97,7 @@
         let isImageUploaded = false;
         let extractedBlob = null;
         let extractedFileName = '';
+        let extractedFileExtension = '';
 
         function resetUI() {
             document.getElementById('extractedFileInfo').innerText = '';
@@ -190,7 +191,6 @@
 
             const extractedFileName = binaryStringToUtf8(new Uint8Array(extractedFileNameBinary));
             console.log(`抽出されたファイル名: ${extractedFileName}`);
-            document.getElementById('extractedFileInfo').innerText = `ファイル名: ${extractedFileName}`;
 
             // データ長の抽出（32ビット）
             let binaryLength = '';
@@ -231,6 +231,8 @@
                 fileExtension += String.fromCharCode(parseInt(charBinary, 2));
             }
 
+            extractedFileExtension = fileExtension; // 保存するための拡張子を設定
+
             // データ本体の抽出（1000ピクセルずつ分散実行）
             const binaryData = [];
             const chunkSize = 1000;
@@ -253,17 +255,18 @@
                 if (startIndex + chunkSize < dataLength) {
                     setTimeout(() => extractChunk(startIndex + chunkSize), 0);
                 } else {
-                    finalizeExtraction(binaryData, fileExtension);
+                    finalizeExtraction(binaryData, fileExtension, extractedFileName);
                 }
             }
 
             extractChunk(0);
         }
 
-        function finalizeExtraction(binaryData, fileExtension) {
+        function finalizeExtraction(binaryData, fileExtension, extractedFileName) {
             // データのプレビュー
             extractedBlob = new Blob([new Uint8Array(binaryData)]);
-            extractedFileName = `extracted.${fileExtension}`;
+            const fullFileName = `${extractedFileName}.${fileExtension}`; // ファイル名と拡張子を統合
+            console.log(`ファイル名: ${fullFileName}`);
             previewExtractedData(binaryData, fileExtension);
             updateProgressBar(100);
 
@@ -273,22 +276,8 @@
 
             // 容量をKBまたはMBに変換して表示
             const fileSize = formatFileSize(extractedBlob.size);
-            let fileInfo = `ファイル形式: ${fileExtension}, 容量: ${fileSize}`;
-
-            // 画像の場合はピクセル数も表示
-            if (fileExtension === 'png' || fileExtension === 'jpg' || fileExtension === 'jpeg') {
-                const img = new Image();
-                img.onload = function() {
-                    const width = img.width;
-                    const height = img.height;
-                    const totalPixels = width * height;
-                    fileInfo += `, サイズ: ${width}x${height} ピクセル (${totalPixels} ピクセル)`;
-                    document.getElementById('extractedFileInfo').innerText = fileInfo;
-                };
-                img.src = URL.createObjectURL(extractedBlob);
-            } else {
-                document.getElementById('extractedFileInfo').innerText = fileInfo;
-            }
+            let fileInfo = `ファイル名: ${fullFileName}, 容量: ${fileSize}`;
+            document.getElementById('extractedFileInfo').innerText = fileInfo;
         }
 
         // 容量をKBまたはMBに変換する関数
@@ -354,8 +343,9 @@
         // 抽出データのダウンロード
         function downloadExtractedData() {
             const link = document.createElement('a');
+            const fullFileName = `${extractedFileName}.${extractedFileExtension}`; // ファイル名と拡張子を統合
             link.href = URL.createObjectURL(extractedBlob);
-            link.download = extractedFileName;
+            link.download = fullFileName;
             link.click();
             URL.revokeObjectURL(link.href);
         }
