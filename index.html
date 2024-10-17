@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ステガノグラフィー - 埋め込まれたデータを抽出</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; color: #333; transition: background-color 0.3s, color 0.3s; }
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f9f9f9; color: #333; transition: background-color 0.3s, color: 0.3s; }
         .container { max-width: 85%; margin: 0 auto; background-color: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); border-radius: 8px; }
         .section { margin-bottom: 40px; }
         .section h3 { color: #444; margin-bottom: 10px; }
@@ -97,6 +97,7 @@
         let isImageUploaded = false;
         let extractedBlob = null;
         let extractedFileName = '';
+        let extractedFileExtension = '';
 
         function resetUI() {
             document.getElementById('extractedFileInfo').innerText = '';
@@ -190,7 +191,7 @@
 
             const extractedFileName = binaryStringToUtf8(new Uint8Array(extractedFileNameBinary));
             console.log(`抽出されたファイル名: ${extractedFileName}`);
-            document.getElementById('extractedFileInfo').innerText = `ファイル名: ${extractedFileName}`;  // ファイル名を表示
+            document.getElementById('extractedFileInfo').innerText = `ファイル名: ${extractedFileName}`;
 
             // データ長の抽出（32ビット）
             let binaryLength = '';
@@ -230,6 +231,7 @@
                 }
                 fileExtension += String.fromCharCode(parseInt(charBinary, 2));
             }
+            extractedFileExtension = fileExtension;  // 抽出した拡張子を保存
 
             // データ本体の抽出（1000ピクセルずつ分散実行）
             const binaryData = [];
@@ -354,8 +356,9 @@
         // 抽出データのダウンロード
         function downloadExtractedData() {
             const link = document.createElement('a');
+            const fullFileName = extractedFileName + '.' + extractedFileExtension;  // ファイル名に拡張子を追加
             link.href = URL.createObjectURL(extractedBlob);
-            link.download = extractedFileName;  // 抽出されたファイル名でダウンロード
+            link.download = fullFileName;  // 抽出されたファイル名と拡張子でダウンロード
             link.click();
             URL.revokeObjectURL(link.href);
         }
