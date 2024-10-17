@@ -189,7 +189,7 @@
                 extractedFileNameBinary.push(parseInt(byte, 2));
             }
 
-            const extractedFileName = binaryStringToUtf8(new Uint8Array(extractedFileNameBinary));
+            extractedFileName = binaryStringToUtf8(new Uint8Array(extractedFileNameBinary));  // 変数に保存
             console.log(`抽出されたファイル名: ${extractedFileName}`);
             document.getElementById('extractedFileInfo').innerText = `ファイル名: ${extractedFileName}`;
 
@@ -255,14 +255,14 @@
                 if (startIndex + chunkSize < dataLength) {
                     setTimeout(() => extractChunk(startIndex + chunkSize), 0);
                 } else {
-                    finalizeExtraction(binaryData, fileExtension, extractedFileName);  // 抽出されたファイル名を渡す
+                    finalizeExtraction(binaryData, fileExtension);  // 抽出された拡張子を渡す
                 }
             }
 
             extractChunk(0);
         }
 
-        function finalizeExtraction(binaryData, fileExtension, extractedFileName) {
+        function finalizeExtraction(binaryData, fileExtension) {
             // データのプレビュー
             extractedBlob = new Blob([new Uint8Array(binaryData)]);
             previewExtractedData(binaryData, fileExtension);
